@@ -9,10 +9,7 @@ use App\Http\Controllers\API\BaseController;
 
 class ReportController extends BaseController
 {
-    /**
-     * GET /reports
-     * Optional filters: ?resource_id=123
-     */
+
     public function index(Request $request)
     {
         $query = Report::with(['user', 'resource']);
@@ -26,9 +23,7 @@ class ReportController extends BaseController
         return $this->sendResponse($reports, 'Reports retrieved successfully.');
     }
 
-    /**
-     * POST /reports
-     */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -47,9 +42,7 @@ class ReportController extends BaseController
         return $this->sendResponse($report->load(['user', 'resource']), 'Report created successfully.', 201);
     }
 
-    /**
-     * GET /reports/{id}
-     */
+
     public function show($id)
     {
         $report = Report::with(['user', 'resource'])->find($id);
@@ -60,9 +53,7 @@ class ReportController extends BaseController
         return $this->sendResponse($report, 'Report retrieved successfully.');
     }
 
-    /**
-     * PUT/PATCH /reports/{id}
-     */
+
     public function update(Request $request, $id)
     {
         $report = Report::find($id);
@@ -85,9 +76,7 @@ class ReportController extends BaseController
         return $this->sendResponse($report->load(['user', 'resource']), 'Report updated successfully.');
     }
 
-    /**
-     * DELETE /reports/{id}
-     */
+
     public function destroy($id)
     {
         $report = Report::find($id);

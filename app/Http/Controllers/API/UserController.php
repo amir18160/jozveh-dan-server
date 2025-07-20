@@ -10,20 +10,19 @@ use Illuminate\Validation\Rule;
 
 class UserController extends BaseController
 {
-    /**
-     * Display a listing of the users.
-     */
+
     public function index(Request $request)
     {
-        $result =  $perPage = $request->query('per_page', 10);
+
+
+        $perPage = $request->query('per_page', 10);
         $users = User::paginate($perPage);
 
-        return response()->json($users);
+        // Use sendResponse for consistency
+        return $this->sendResponse($users, 'Users retrieved successfully.');
     }
 
-    /**
-     * Store a newly created user in storage.
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -39,21 +38,19 @@ class UserController extends BaseController
 
         $user = User::create($validated);
 
-        return  $this->sendResponse($user, statusCode: 201);
+
+        return $this->sendResponse($user, 'User created successfully.', 201);
     }
 
-    /**
-     * Display the specified user.
-     */
+
     public function show(string $id)
     {
         $user = User::findOrFail($id);
-        return $this->sendResponse($user, statusCode: 200);
+        // Add a success message
+        return $this->sendResponse($user, 'User retrieved successfully.', 200);
     }
 
-    /**
-     * Update the specified user in storage.
-     */
+
     public function update(Request $request, string $id)
     {
         $user = User::findOrFail($id);
@@ -78,17 +75,16 @@ class UserController extends BaseController
 
         $user->update($validated);
 
-        return $this->sendResponse($user, statusCode: 200);
+
+        return $this->sendResponse($user, 'User updated successfully.', 200);
     }
 
-    /**
-     * Remove the specified user from storage.
-     */
+
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
         $user->delete();
 
-        return $this->sendResponse(null, statusCode: 201);
+        return $this->sendResponse(null, 'User deleted successfully.', 200);
     }
 }

@@ -11,12 +11,7 @@ use Illuminate\Support\Facades\Validator;
 
 class RegisterController extends BaseController
 {
-    /**
-     * Register api
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
+
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -43,12 +38,7 @@ class RegisterController extends BaseController
         return $this->sendResponse($success, 'User registered successfully.');
     }
 
-    /**
-     * Login api
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
+
     public function login(Request $request): JsonResponse
     {
         if (! Auth::attempt($request->only('email', 'password'))) {
