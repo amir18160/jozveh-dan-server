@@ -21,25 +21,39 @@ class ResourceController extends BaseController
      */
     public function index(Request $request)
     {
-        $query = Resource::with(['user:id,name,profile_image', 'categories:id,name']); // Eager load user and categories
+        $validator = Validator::make($request->all(), [
+            'search' => 'nullable|string|max:255',
+            'category_id' => 'nullable|integer|exists:categories,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+        ]);
 
-        if ($request->has('category_id')) {
-            $categoryId = $request->get('category_id');
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors()->toArray(), 422);
+        }
+
+        $query = Resource::with(['user:id,name,profile_image', 'categories:id,name'])
+            ->where('status', 'active');
+
+        if ($request->filled('search')) {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('description', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Filter by a single category ID
+        if ($request->filled('category_id')) {
+            $categoryId = $request->category_id;
             $query->whereHas('categories', function ($q) use ($categoryId) {
                 $q->where('categories.id', $categoryId);
             });
         }
 
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->get('user_id'));
-        }
-
-        if ($request->has('search')) {
-            $searchTerm = $request->get('search');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
-                    ->orWhere('description', 'like', "%{$searchTerm}%");
-            });
+        // Filter by a single user ID
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
         }
 
         $resources = $query->latest()->paginate($request->get('per_page', 15));

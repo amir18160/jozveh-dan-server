@@ -59,7 +59,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', IsAdmin::class])->group(function () {
-    // CORRECTED: PUT route now correctly points to the 'update' method.
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::patch('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
@@ -97,4 +96,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai-search', [AiSearchController::class, 'search']);
 });
 
-Route::apiResource('reports', ReportController::class);
+Route::post('/reports', [ReportController::class, 'store'])->middleware('auth:sanctum');
+
+Route::middleware(['auth:sanctum', IsAdmin::class])->group(function () {
+    Route::get('/reports', [ReportController::class, 'index']);
+    Route::put('/reports/{report}', [ReportController::class, 'update']);
+    Route::delete('/reports/{report}', [ReportController::class, 'destroy']);
+});

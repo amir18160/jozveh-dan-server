@@ -27,4 +27,9 @@ class Report extends Model
     {
         return $this->belongsTo(\App\Models\Resource::class);
     }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'user_id');
+    }
 }

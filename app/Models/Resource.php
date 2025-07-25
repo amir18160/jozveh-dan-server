@@ -62,4 +62,9 @@ class Resource extends Model
         }
         return null;
     }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'user_id');
+    }
 }

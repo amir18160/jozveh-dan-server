@@ -4,84 +4,76 @@ namespace App\Http\Controllers\API;
 
 use App\Models\Report;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\API\BaseController;
+use Illuminate\Validation\Rule;
 
 class ReportController extends BaseController
 {
-
     public function index(Request $request)
     {
-        $query = Report::with(['user', 'resource']);
-
-        if ($request->has('resource_id')) {
-            $query->where('resource_id', $request->get('resource_id'));
+        if (Auth::user()->role !== 'admin') {
+            return $this->sendError('Forbidden.', ['error' => 'You do not have permission to view reports.'], 403);
         }
 
-        $reports = $query->latest()->paginate(10);
+        $query = Report::with(['user:id,name', 'resource:id,title']);
+
+        if ($request->has('status') && in_array($request->status, ['pending', 'resolved'])) {
+            $query->where('status', $request->status);
+        }
+
+        $reports = $query->latest()->paginate(20);
 
         return $this->sendResponse($reports, 'Reports retrieved successfully.');
     }
 
-
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'user_id'     => 'required|exists:users,id',
-            'resource_id' => 'nullable|exists:resources,id',
-            'reason'      => 'required|string',
-            'status'      => 'in:pending,resolved',
+            'resource_id' => 'required|exists:resources,id',
+            'reason'      => 'required|string|min:10|max:1000',
         ]);
 
         if ($validator->fails()) {
-            return $this->sendError('Validation Error.', $validator->errors(), 422);
+            return $this->sendError('Validation Error.', $validator->errors()->toArray(), 422);
         }
 
-        $report = Report::create($validator->validated());
+        $report = Report::create([
+            'user_id'     => Auth::id(),
+            'resource_id' => $request->resource_id,
+            'reason'      => $request->reason,
+        ]);
 
-        return $this->sendResponse($report->load(['user', 'resource']), 'Report created successfully.', 201);
+        return $this->sendResponse($report, 'Resource reported successfully.', 201);
     }
 
 
-    public function show($id)
+    public function update(Request $request, Report $report)
     {
-        $report = Report::with(['user', 'resource'])->find($id);
-        if (! $report) {
-            return $this->sendError('Report not found.', [], 404);
-        }
 
-        return $this->sendResponse($report, 'Report retrieved successfully.');
-    }
-
-
-    public function update(Request $request, $id)
-    {
-        $report = Report::find($id);
-        if (! $report) {
-            return $this->sendError('Report not found.', [], 404);
+        if (Auth::user()->role !== 'admin') {
+            return $this->sendError('Forbidden.', ['error' => 'You do not have permission to update reports.'], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'reason' => 'sometimes|required|string',
-            'status' => 'in:pending,resolved',
+            'status' => ['required', Rule::in(['pending', 'resolved'])],
         ]);
 
         if ($validator->fails()) {
-            return $this->sendError('Validation Error.', $validator->errors(), 422);
+            return $this->sendError('Validation Error.', $validator->errors()->toArray(), 422);
         }
 
-        $report->fill($validator->validated());
-        $report->save();
+        $report->update($validator->validated());
 
-        return $this->sendResponse($report->load(['user', 'resource']), 'Report updated successfully.');
+        return $this->sendResponse($report, 'Report status updated successfully.');
     }
 
 
-    public function destroy($id)
+    public function destroy(Report $report)
     {
-        $report = Report::find($id);
-        if (! $report) {
-            return $this->sendError('Report not found.', [], 404);
+        if (Auth::user()->role !== 'admin') {
+            return $this->sendError('Forbidden.', ['error' => 'You do not have permission to delete reports.'], 403);
         }
 
         $report->delete();
